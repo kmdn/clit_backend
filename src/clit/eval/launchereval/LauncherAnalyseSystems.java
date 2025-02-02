@@ -119,56 +119,20 @@ public class LauncherAnalyseSystems {
 				}
 			}
 
-			System.out.println(
-					"Consistency check: Were all documents annotated by all systems or did some not go through?");
-			final Map<String, Set<String>> hashInconsistencyTrackingMap = new HashMap<>();
+			// Remove systems that are too inconsistent
+			final int MAX_MISSING_DOCS = 100;
+			final Map<String, Set<String>> hashInconsistencyTrackingMap = consistencyCheckDocumentAmount(
+					MAX_MISSING_DOCS, nifDocs, hashtextMapping, mapSystemDocumentlist);
 
-			final Iterator<Entry<String, List<AnnotatedDocument>>> iter = mapSystemDocumentlist.entrySet().iterator();
-			while (iter.hasNext()) {
-				final Entry<String, List<AnnotatedDocument>> e = iter.next();
+			final List<String> hashesList = getNIFHashesList(hashtextMapping, nifDocs);
 
-				if (nifDocs.size() != e.getValue().size()) {
-					System.out.println(
-							"Iconsistency: " + e.getKey() + " - invalid number of annotated documents (Expected: "
-									+ nifDocs.size() + ", Found: " + e.getValue().size() + "). Removing from pool.");
-
-					// Checking which documents are missing
-					final HashSet<String> inconsistencySetText = new HashSet<>(getAllTextsFromNIF(nifDocs));
-					inconsistencySetText.removeAll(new HashSet<>(getAllTexts(e.getValue())));
-					Set<String> inconsistencySetHash = getHashes(inconsistencySetText, hashtextMapping);
-					hashInconsistencyTrackingMap.put(e.getKey(), inconsistencySetHash);
-					iter.remove();
-
-				}
-			}
-
-			// Outputting which are missing
-			for (Entry<String, Set<String>> e : hashInconsistencyTrackingMap.entrySet()) {
-				int max_display_limit = 100;
-				if (e.getValue().size() < max_display_limit) {
-					System.out.println(
-							"System[" + e.getKey() + "]: Missing Hashes(" + e.getValue().size() + "): " + e.getValue());
-				} else {
-					System.out.println("System[" + e.getKey() + "]: Missing Hashes(" + e.getValue().size() + "): >"
-							+ max_display_limit);
-					System.out.println(Lists.newArrayList(e.getValue()).subList(0, max_display_limit));
-				}
-			}
-
-			System.out.println();
+			bufferInconsistentEntries(MAX_MISSING_DOCS, hashInconsistencyTrackingMap, hashesList,
+					mapSystemDocumentlist);
 
 			System.out.println("Remaining systems (post 'consistency check'): " + mapSystemDocumentlist.keySet() + " ("
 					+ mapSystemDocumentlist.keySet().size() + ")");
 
 			evaluate(nifDocs, mapSystemDocumentlist);
-
-			// Check if input document is in hashtextMapping
-
-			// Yes --> get them for all datasets and systems
-			// Create map with KEY= dataset + system; VAL=List<AnnotatedDocument>
-
-			// Group it based on dataset --> check the Evaluator code to see which grouping
-			// makes the most sense
 
 		} catch (IOException |
 
@@ -176,6 +140,94 @@ public class LauncherAnalyseSystems {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+
+	private static void bufferInconsistentEntries(final int MAX_MISSING_DOCS,
+			Map<String, Set<String>> hashInconsistencyTrackingMap, List<String> hashesList,
+			Map<String, List<AnnotatedDocument>> mapSystemDocumentlist) {
+		for (Entry<String, Set<String>> e : hashInconsistencyTrackingMap.entrySet()) {
+			if (e.getValue().size() == 0 || e.getValue().size() > MAX_MISSING_DOCS) {
+				continue;
+			}
+
+			// There's a few insonsistencies (less than our set limit)
+			// Goal: Render lists consistent even if slightly "wrong" results-wise
+			// Step 1: Get the hash
+			// Step 2: Figure out what position it belongs to (check NIFDocs perhaps?)
+			// Step 3: Add an empty document at that spot
+			for (String hash : e.getValue()) {
+				final String systemDoc = e.getKey();
+				int index = hashesList.indexOf(hash);
+				final List<AnnotatedDocument> resultDocList = mapSystemDocumentlist.get(systemDoc);
+				// Add a dummy document to resolve
+				resultDocList.add(index, new AnnotatedDocument(""));
+			}
+		}
+	}
+
+	/**
+	 * Checks for consistency based on number of result documents for each system
+	 * 
+	 * @param nifDocs
+	 * @param hashtextMapping
+	 * @param mapSystemDocumentlist
+	 * @return
+	 * @throws UnexpectedException
+	 */
+	private static Map<String, Set<String>> consistencyCheckDocumentAmount(final int DELETE_ENTRY_THRESHOLD_MAX_LIMIT,
+			final List<Document> nifDocs, HashBiMap<String, String> hashtextMapping,
+			Map<String, List<AnnotatedDocument>> mapSystemDocumentlist) throws UnexpectedException {
+		System.out
+				.println("Consistency check: Were all documents annotated by all systems or did some not go through?");
+		final Map<String, Set<String>> hashInconsistencyTrackingMap = new HashMap<>();
+
+		final Iterator<Entry<String, List<AnnotatedDocument>>> iter = mapSystemDocumentlist.entrySet().iterator();
+		while (iter.hasNext()) {
+			final Entry<String, List<AnnotatedDocument>> e = iter.next();
+
+			if (nifDocs.size() != e.getValue().size()) {
+				System.out
+						.println("Iconsistency: " + e.getKey() + " - invalid number of annotated documents (Expected: "
+								+ nifDocs.size() + ", Found: " + e.getValue().size() + "). Removing from pool.");
+
+				// Checking which documents are missing
+				final HashSet<String> inconsistencySetText = new HashSet<>(getAllTextsFromNIF(nifDocs));
+				inconsistencySetText.removeAll(new HashSet<>(getAllTexts(e.getValue())));
+				Set<String> inconsistencySetHash = getHashes(inconsistencySetText, hashtextMapping);
+				hashInconsistencyTrackingMap.put(e.getKey(), inconsistencySetHash);
+				if (inconsistencySetHash.size() > DELETE_ENTRY_THRESHOLD_MAX_LIMIT) {
+					iter.remove();
+				}
+			}
+		}
+
+		// Outputting which are missing
+		for (Entry<String, Set<String>> e : hashInconsistencyTrackingMap.entrySet()) {
+			int max_display_limit = 100;
+			if (e.getValue().size() < max_display_limit) {
+				System.out.println(
+						"System[" + e.getKey() + "]: Missing Hashes(" + e.getValue().size() + "): " + e.getValue());
+			} else {
+				System.out.println("System[" + e.getKey() + "]: Missing Hashes(" + e.getValue().size() + "): >"
+						+ max_display_limit);
+				System.out.println(Lists.newArrayList(e.getValue()).subList(0, max_display_limit));
+			}
+		}
+
+		return hashInconsistencyTrackingMap;
+	}
+
+	private static List<String> getNIFHashesList(HashBiMap<String, String> hashtextMapping, List<Document> nifDocs)
+			throws UnexpectedException {
+		List<String> ret = Lists.newArrayList();
+		for (Document doc : nifDocs) {
+			final String hash = hashtextMapping.inverse().get(doc.getText());
+			if (hash == null) {
+				throw new UnexpectedException("Could not map NIF doc to appropriate hash...");
+			}
+			ret.add(hash);
+		}
+		return ret;
 	}
 
 	private static Set<String> getHashes(HashSet<String> inconsistencySetText,
@@ -254,9 +306,9 @@ public class LauncherAnalyseSystems {
 			System.out.println(
 					"--------------------------------------- NEXT LINKER'S EVAL ------------------------------------------");
 		}
-		
-		//mapEvaluations = combineSystemsPairwise(linkerStringDelim, nifDocs, mapLinkerResults, combiner);
 
+		// mapEvaluations = combineSystemsPairwise(linkerStringDelim, nifDocs,
+		// mapLinkerResults, combiner);
 
 	}
 
@@ -442,6 +494,10 @@ public class LauncherAnalyseSystems {
 
 	private static String getFullKey(String dataset, String system, String documentHash) {
 		return getDocumentKey(dataset, system, documentHash);
+	}
+
+	private static String getFullKey(String datasetSystem, String documentHash) {
+		return getFullKey(datasetSystem.split(" > ")[0], datasetSystem.split(" > ")[1], documentHash);
 	}
 
 	private static String extractHashFromKey(String key) {

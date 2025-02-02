@@ -92,7 +92,7 @@ public class BenchmarkMentionDetectionTemplateTest implements Runnable {
 
   }
 
-  private String hashStringSHA256(String input) {
+  public static String hashStringSHA256(String input) {
     try {
       MessageDigest digest = MessageDigest.getInstance("SHA-256");
       byte[] hash = digest.digest(input.getBytes());
