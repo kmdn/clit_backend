@@ -13,7 +13,7 @@ public enum Strings {
 	//SHETLAND_DIR("/vol2/kris/"), /// home/noulletk/prog/bmw/"), //
 	// SHETLAND_DIR("/home/samuel/Daten/hiwi/20201009-CLiT/agnos/"),//
 	//SEELAND_DIR("/vol1/data_faerberm/kris/prog/"), // "/vol2/kris/"//
-	LOCAL_DIR("~/"),//("./"), //
+	LOCAL_DIR(".clit_root/"),//("./"), //
 	ROOTPATH(LOCAL_DIR.val), // SHETLAND_DIR.val), //
 	NEWLINE(System.getProperty("line.separator")), //
 	BABELFY_KEY(// "c59c564f-cdea-4ed7-9e38-fdd5b5d0c584"

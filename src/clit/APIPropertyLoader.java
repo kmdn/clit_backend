@@ -15,15 +15,15 @@ import experiment.EnumComponentType;
 public class APIPropertyLoader {
 	private final String propertyFolder;
 
-	private static final String localPath = "C:\\Users\\wf7467\\Desktop\\GitHub\\kmdn\\combining_linking_techniques\\properties";
+	private static final String localPath = System.getenv("PROPERTIES_PATH");
 
 	public APIPropertyLoader(final String folder) {
 		this.propertyFolder = folder;
-		final List<APIComponent> propertiesAPIComponents = Lists.newArrayList();
 	}
 
 	public APIPropertyLoader() {
 		this(new File("/clit/properties").exists() ? "/clit/properties" : localPath);
+		System.out.println("-------------------------------------------" + this.propertyFolder);
 	}
 
 	public Collection<APIComponent> load() {
@@ -66,7 +66,7 @@ public class APIPropertyLoader {
 				valURL = prop.getProperty(keyURL);
 				System.out.println("ValURL: " + valURL);
 				// get the display name
-				valDisplayName = prop.getProperty(keyDisplayName) +" (.properties)";
+				valDisplayName = prop.getProperty(keyDisplayName) + " (.properties)";
 				System.out.println("val display name: " + valDisplayName);
 
 				// the rest of the values are defined in EnumPipelineType.values()

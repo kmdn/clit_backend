@@ -4,12 +4,20 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 public class ThreadPoolBenchmarkRunner {
 	public static void main(String[] args) {
 		String home = "C:\\Users\\wf7467\\Desktop\\Evaluation Datasets\\Datasets\\entity_linking";// System.getProperty("user.home");
+//    String home = System.getProperty("user.home");
+//    Map<String, String> paths = Map.of(
+//        "AIDA-YAGO2-dataset.tsv_nif",
+//        home + "/Desktop/dataset/datasets/conll_aida-yago2-dataset/AIDA-YAGO2-dataset.tsv_nif",
+//        "KORE_50_DBpedia.ttl", home + "/Desktop/dataset/datasets/KORE50/KORE_50_DBpedia.ttl",
+//        "News-100.ttl", home + "/Desktop/dataset/datasets/News-100.ttl",
+//        "RSS-500.ttl", home + "/Desktop/dataset/datasets/RSS-500.ttl",
+//        "Reuters-128.ttl", home + "/Desktop/dataset/datasets/Reuters-128.ttl");
 		Map<String, String> paths = new HashMap<>();
+		
 		paths.put("AIDA-YAGO2-dataset.tsv_nif",
 				home + "/conll_aida-yago2-dataset/AIDA-YAGO2-dataset.tsv_nif");
 		paths.put("KORE_50_DBpedia.ttl", home + "/KORE50/KORE_50_DBpedia.ttl");
@@ -17,6 +25,7 @@ public class ThreadPoolBenchmarkRunner {
 		paths.put("RSS-500.ttl", home + "/RSS-500.ttl");
 		paths.put("Reuters-128.ttl", home + "/Reuters-128.ttl");
 		// Map<String, String> paths = new HashMap<>();
+
 		Map<String, Boolean> linkers = new HashMap<>();
 		linkers.put("AIDA", false); // Error: MD1: https://gate.d5.mpi-inf.mpg.de/aida/service/disambiguate
 		linkers.put("Babelfy", false);
@@ -45,7 +54,6 @@ public class ThreadPoolBenchmarkRunner {
 			}
 		}
 		es.shutdown();
-
 	}
 
 }

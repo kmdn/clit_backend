@@ -1,6 +1,7 @@
 # Compiled class file
 *.class
-~
+.clit_root/
+~/
 
 # Log file
 *.log
